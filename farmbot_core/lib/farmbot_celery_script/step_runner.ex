@@ -7,14 +7,14 @@ defmodule FarmbotCeleryScript.StepRunner do
   @doc """
   Steps through an entire AST.
   """
-  def step(listener, tag, %AST{} = ast) do
-    step(listener, tag, Compiler.compile(ast))
+  def begin(listener, tag, %AST{} = ast) do
+    do_step(listener, tag, Compiler.compile(ast))
   end
 
-  def step(listener, tag, [fun | rest]) when is_function(fun, 0) do
+  def do_step(listener, tag, [fun | rest]) when is_function(fun, 0) do
     case execute(listener, tag, fun) do
       [fun | _] = more when is_function(fun, 0) ->
-        step(listener, tag, more ++ rest)
+        do_step(listener, tag, more ++ rest)
 
       {:error, reason} when is_binary(reason) ->
         send(listener, {:step_complete, tag, {:error, reason}})
@@ -26,11 +26,11 @@ defmodule FarmbotCeleryScript.StepRunner do
         {:error, inspect(reason)}
 
       _ ->
-        step(listener, tag, rest)
+        do_step(listener, tag, rest)
     end
   end
 
-  def step(listener, tag, []) do
+  def do_step(listener, tag, []) do
     send(listener, {:step_complete, tag, :ok})
     :ok
   end
