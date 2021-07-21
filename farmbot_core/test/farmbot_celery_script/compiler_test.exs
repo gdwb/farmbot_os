@@ -5,7 +5,6 @@ defmodule FarmbotCeleryScript.CompilerTest do
   alias FarmbotCeleryScript.{AST, Compiler}
   # Only required to compile
   alias FarmbotCeleryScript.SysCalls, warn: false
-  alias FarmbotCeleryScript.Compiler.IdentifierSanitizer
 
   test "change_ownership" do
     email = "t@g.com"
@@ -28,7 +27,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
     end)
 
     result =
-      FarmbotCeleryScript.Compiler.change_ownership(%{body: body}, [])
+      FarmbotCeleryScript.Compiler.change_ownership(%{body: body})
       |> Code.eval_quoted()
 
     assert result == {:ok, []}
@@ -48,7 +47,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
     end)
 
     result =
-      FarmbotCeleryScript.Compiler.send_message(args, [])
+      FarmbotCeleryScript.Compiler.send_message(args)
       |> Code.eval_quoted()
 
     assert result == {:ok, []}
@@ -80,30 +79,10 @@ defmodule FarmbotCeleryScript.CompilerTest do
     [body_item] = Compiler.compile(sequence)
     assert body_item.() == 100
 
-    # The compiler expects the `env` argument to be already sanatized.
-    # When supplying the env for this test, we need to make sure the
-    # `provided_by_caller` variable name is sanatized
-    sanatized_env = [
-      {IdentifierSanitizer.to_variable("provided_by_caller"), 900}
-    ]
-
-    [body_item] = Compiler.compile(sequence, sanatized_env)
+    [body_item] = Compiler.compile(sequence)
     assert body_item.() == 900
 
-    celery_env = [
-      %AST{
-        kind: :parameter_application,
-        args: %{
-          label: "provided_by_caller",
-          data_value: 600
-        }
-      }
-    ]
-
-    compiled_celery_env =
-      Compiler.Utils.compile_params_to_function_args(celery_env, [])
-
-    [body_item] = Compiler.compile(sequence, compiled_celery_env)
+    [body_item] = Compiler.compile(sequence)
     assert body_item.() == 600
   end
 
@@ -154,7 +133,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
       ]
     }
 
-    elixir_ast = Compiler.compile_ast(celery_ast, [])
+    elixir_ast = Compiler.compile_ast_to_fun(celery_ast)
 
     elixir_code =
       elixir_ast
@@ -427,9 +406,8 @@ defmodule FarmbotCeleryScript.CompilerTest do
   end
 
   test "`abort`" do
-    fake_env = []
     ast = %AST{kind: :abort}
-    func = Compiler.compile(ast, fake_env)
+    func = Compiler.compile(ast)
     assert func.() == {:error, "aborted"}
   end
 
@@ -518,7 +496,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
 
   defp compile(ast) do
     ast
-    |> Compiler.compile_ast([])
+    |> Compiler.compile_ast_to_fun()
     |> Macro.to_string()
     |> Code.format_string!()
     |> IO.iodata_to_binary()

@@ -1,8 +1,7 @@
 defmodule FarmbotCeleryScript.Compiler.Sequence do
-  import FarmbotCeleryScript.Compiler.Utils
-  alias FarmbotCeleryScript.Compiler.IdentifierSanitizer
+  alias FarmbotCeleryScript.Compiler.Utils
 
-  def sequence(%{args: %{locals: %{body: params_or_iterables}}} = ast, env) do
+  def sequence(%{args: %{locals: %{body: params_or_iterables}}} = ast) do
     # if there is an iterable AST here,
     # we need to compile _many_ sequences, not just one.
 
@@ -12,9 +11,9 @@ defmodule FarmbotCeleryScript.Compiler.Sequence do
     .extract_iterable(params_or_iterables)
 
     if iterable_ast do
-      compile_sequence_iterable(iterable_ast, ast, env)
+      compile_sequence_iterable(iterable_ast, ast)
     else
-      compile_sequence(ast, env)
+      compile_sequence(ast)
     end
   end
 
@@ -23,9 +22,7 @@ defmodule FarmbotCeleryScript.Compiler.Sequence do
         %{
           args: %{locals: %{body: _} = locals} = sequence_args,
           meta: sequence_meta
-        } = sequence_ast,
-        env
-      ) do
+        } = sequence_ast) do
     sequence_name =
       sequence_meta[:sequence_name] || sequence_args[:sequence_name]
 
@@ -88,97 +85,35 @@ defmodule FarmbotCeleryScript.Compiler.Sequence do
                   sequence_ast
                   | meta: %{sequence_name: sequence_name},
                     args: %{locals: %{locals | body: [parameter_application]}}
-                },
-                env
-              )
+                })
 
             {acc ++ body, index + 1}
           end)
 
-        add_sequence_init_and_complete_logs_ittr(
+          Utils.add_sequence_init_and_complete_logs(
           body,
           sequence_name <> " - #{group_name} (#{total} items)"
         )
     end
   end
 
-  def create_better_params(body, env) do
-    parameter_declarations =
-      Enum.reduce(env, %{}, fn
-        {key, value}, map ->
-          encoded_label = "#{key}"
-
-          if String.starts_with?(encoded_label, "unsafe_") do
-            Map.put(map, IdentifierSanitizer.to_string(encoded_label), value)
-          else
-            map
-          end
-      end)
-
-    Enum.reduce(body, parameter_declarations, fn ast, map ->
-      case ast do
-        %{kind: :parameter_application} ->
-          args = Map.fetch!(ast, :args)
-          label = Map.fetch!(args, :label)
-          Map.put(map, label, Map.fetch!(args, :data_value))
-
-        %{kind: :variable_declaration} ->
-          args = Map.fetch!(ast, :args)
-          label = Map.fetch!(args, :label)
-          Map.put(map, label, Map.fetch!(args, :data_value))
-
-        %{kind: :parameter_declaration} ->
-          map
-      end
-    end)
+  def create_better_params(body) do
+    IO.inspect(body, label: "=== TODO: create_better_params")
+    %{unfinished: "YES"}
   end
 
-  def compile_sequence(
-        %{args: %{locals: %{body: params}} = args, body: block, meta: meta},
-        env
-      ) do
-    # Sort the args.body into two arrays.
-    # The `params` side gets turned into
-    # a keyword list. These `params` are passed in from a previous sequence.
-    # The `body` side declares variables in _this_ scope.
-    # === DON'T USE THIS IN NEW CODE.
-    #     SCHEDULED FOR DEPRECATION.
-    #     USE `better_params` INSTEAD.
-    {params_fetch, body} =
-      Enum.reduce(params, {[], []}, fn ast, {params, body} = _acc ->
-        case ast do
-          # declares usage of a parameter as defined by variable_declaration
-          %{kind: :parameter_declaration} ->
-            {params ++ [compile_param_declaration(ast, env)], body}
-
-          # declares usage of a variable as defined inside the body of itself
-          %{kind: :parameter_application} ->
-            {params ++ [compile_param_application(ast, env)], body}
-
-          # defines a variable exists
-          %{kind: :variable_declaration} ->
-            {params, body ++ [ast]}
-        end
-      end)
-
-    {:__block__, env, assignments} = compile_block(body, env)
+  def compile_sequence(%{args: %{locals: %{body: params}} = args, body: block, meta: meta}) do
     sequence_name = meta[:sequence_name] || args[:sequence_name]
-    steps = compile_block(block, env) |> decompose_block_to_steps()
+    steps = Utils.compile_block(block) |> Utils.decompose_block_to_steps()
+    steps = Utils.add_sequence_init_and_complete_logs(steps, sequence_name)
 
-    steps = add_sequence_init_and_complete_logs(steps, sequence_name)
-
-    better_params = create_better_params(params, env)
+    better_params = create_better_params(params)
 
     [
       quote location: :keep do
         fn params ->
           # This quiets a compiler warning if there are no variables in this block
           _ = inspect(params)
-          # Fetches variables from the previous execute()
-          # example:
-          # parent = Keyword.fetch!(params, :parent)
-          unquote_splicing(params_fetch)
-          unquote_splicing(assignments)
           better_params = unquote(better_params)
           _ = inspect(better_params)
           # Unquote the remaining sequence steps.

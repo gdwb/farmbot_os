@@ -8,29 +8,30 @@ defmodule FarmbotCeleryScript.Compiler.Utils do
   @doc """
   Recursively compiles a list or single Celery AST into an Elixir `__block__`
   """
-  def compile_block(asts, env, acc \\ [])
+  def compile_block(asts, acc \\ [])
 
-  def compile_block(%AST{} = ast, env, _) do
-    case Compiler.compile_ast(ast, env) do
-      {_, env, _} = compiled ->
-        {:__block__, env, [compiled]}
+  def compile_block(%AST{} = ast,  _) do
+    case Compiler.compile_ast_to_fun(ast) do
+      {_,  _} = compiled ->
+        {:__block__,  [compiled]}
 
       compiled when is_list(compiled) ->
-        {:__block__, env, compiled}
+        {:__block__,  compiled}
     end
   end
 
-  def compile_block([ast | rest], env, acc) do
-    case Compiler.compile_ast(ast, env) do
-      {_, env, _} = compiled ->
-        compile_block(rest, env, acc ++ [compiled])
+  def compile_block([ast | rest],  acc) do
+    output = Compiler.compile_ast_to_fun(ast)
 
+    case output do
       compiled when is_list(compiled) ->
-        compile_block(rest, env, acc ++ compiled)
+        compile_block(rest,  acc ++ compiled)
+      compiled ->
+          compile_block(rest,  acc ++ [compiled])
     end
   end
 
-  def compile_block([], env, acc), do: {:__block__, env, acc}
+  def compile_block([],  acc), do: {:__block__,  acc}
 
   @doc """
   Compiles a `execute` block to a parameter block
@@ -63,31 +64,27 @@ defmodule FarmbotCeleryScript.Compiler.Utils do
 
       [variable_in_next_scope: variable_in_this_scope]
   """
-  def compile_params_to_function_args(list, env, acc \\ [])
+  def compile_params_to_function_args(list,  acc \\ [])
 
-  def compile_params_to_function_args(
-        [%{kind: :parameter_application, args: args} | rest],
-        env,
-        acc
-      ) do
+  def compile_params_to_function_args([%{kind: :parameter_application, args: args} | rest], acc) do
     %{
       label: next_scope_var_name,
       data_value: data_value
     } = args
 
     next_scope_var_name = IdentifierSanitizer.to_variable(next_scope_var_name)
-    # next_value = Compiler.compile_ast(data_value)
+    # next_value = Compiler.compile_ast_to_fun(data_value)
 
     var =
       quote location: :keep do
         {unquote(next_scope_var_name),
-         unquote(Compiler.compile_ast(data_value, env))}
+         unquote(Compiler.compile_ast_to_fun(data_value))}
       end
 
-    compile_params_to_function_args(rest, env, [var | acc])
+    compile_params_to_function_args(rest,  [var | acc])
   end
 
-  def compile_params_to_function_args([], _env, acc), do: acc
+  def compile_params_to_function_args([], acc), do: acc
 
   @doc """
   Compiles a function block's params.
@@ -118,21 +115,18 @@ defmodule FarmbotCeleryScript.Compiler.Utils do
 
       parent = Keyword.get(params, :parent, %{x: 100, y: 200, z: 300})
   """
-  def compile_param_declaration(
-        %{args: %{label: var_name, default_value: default}},
-        env
-      ) do
+  def compile_param_declaration(%{args: %{label: var_name, default_value: default}}) do
     var_name = IdentifierSanitizer.to_variable(var_name)
 
     quote location: :keep do
-      unquote({var_name, env, __MODULE__}) =
+      unquote({var_name,  __MODULE__}) =
         Keyword.get(
           params,
           unquote(var_name),
-          unquote(Compiler.compile_ast(default, env))
+          unquote(Compiler.compile_ast_to_fun(default))
         )
 
-      _ = unquote({var_name, env, __MODULE__})
+      _ = unquote({var_name,  __MODULE__})
     end
   end
 
@@ -162,19 +156,16 @@ defmodule FarmbotCeleryScript.Compiler.Utils do
         ]
       }
   """
-  def compile_param_application(
-        %{args: %{label: var_name, data_value: value}},
-        env
-      ) do
+  def compile_param_application(%{args: %{label: var_name, data_value: value}}) do
     var_name = IdentifierSanitizer.to_variable(var_name)
 
     quote location: :keep do
       unquote({var_name, [], __MODULE__}) =
-        unquote(Compiler.compile_ast(value, env))
+        unquote(Compiler.compile_ast_to_fun(value))
     end
   end
 
-  def decompose_block_to_steps({:__block__, _env, steps} = _orig) do
+  def decompose_block_to_steps({:__block__, steps} = _orig) do
     Enum.map(steps, fn step ->
       quote location: :keep do
         fn -> unquote(step) end

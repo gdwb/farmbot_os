@@ -25,7 +25,7 @@ defmodule FarmbotCeleryScript.CompilerGroupsTest do
       end
     end)
 
-    result = Sequence.sequence(fake_ast(), [])
+    result = Sequence.sequence(fake_ast())
 
     length1 = 2 + length(fake_point_ids)
     length2 = length(result)
