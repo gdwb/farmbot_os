@@ -69,7 +69,7 @@ defmodule FarmbotCeleryScript.Scheduler do
   """
   @spec schedule(
           GenServer.server(),
-          AST.t() | [Compiler.compiled()],
+          AST.t(),
           DateTime.t(),
           map()
         ) ::
@@ -77,11 +77,7 @@ defmodule FarmbotCeleryScript.Scheduler do
   def schedule(scheduler_pid \\ __MODULE__, celery_script, at, data)
 
   def schedule(sch, %AST{} = ast, %DateTime{} = at, %{} = data) do
-    schedule(sch, Compiler.compile(ast), at, data)
-  end
-
-  def schedule(sch, compiled, at, %{} = data) when is_list(compiled) do
-    GenServer.call(sch, {:schedule, compiled, at, data}, 60_000)
+    GenServer.call(sch, {:schedule, ast, at, data}, 60_000)
   end
 
   def get_next(sch \\ __MODULE__) do
