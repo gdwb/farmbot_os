@@ -29,7 +29,7 @@ defmodule FarmbotCeleryScript.Compiler do
 
   `rpc_request` will be compiled to something like:
   ```
-  fn params ->
+  fn ->
     [
       # Body of the `rpc_request` compiled in here.
     ]
@@ -55,10 +55,7 @@ defmodule FarmbotCeleryScript.Compiler do
   # common logic involved in the compilation of both, therefore,
   # we need a common entrypoint for both.
   def compile(%AST{kind: kind} = ast) when kind in @valid_entry_points do
-    IO.puts("\e[H\e[2J\e[3J")
-    IO.puts("========================")
     result = ast
-    |> IO.inspect(label: "===== AST PRE COMPILATION")
     |> compile_ast_to_fun()
     print_compiled_code(result)
     result
@@ -157,8 +154,10 @@ defmodule FarmbotCeleryScript.Compiler do
   # compiles identifier into a variable.
   # We have to use Elixir ast syntax here because
   # var! doesn't work quite the way we want.
-  def identifier(%{args: %{label: _var_name}}) do
-    raise "Re-write identifier compiler"
+  def identifier(%{args: %{label: var_name}}) do
+    quote location: :keep do
+      Map.fetch!(better_params, unquote(var_name))
+    end
   end
 
   def emergency_lock(_) do
@@ -249,14 +248,14 @@ defmodule FarmbotCeleryScript.Compiler do
   end
 
   defp print_compiled_code(compiled) do
-    IO.puts("=== START ===")
+    IO.puts("# === START ===")
 
     compiled
     |> Macro.to_string()
     |> Code.format_string!()
     |> IO.puts()
 
-    IO.puts("=== END ===\n\n")
+    IO.puts("# === END ===\n\n")
     compiled
   end
 end

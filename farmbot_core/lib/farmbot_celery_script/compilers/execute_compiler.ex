@@ -18,8 +18,6 @@ defmodule FarmbotCeleryScript.Compiler.Execute do
       else: compile_execute(ast)
   end
 
-  def compile_execute_iterable(loop_parameter_appl_ast, ast)
-
   def compile_execute_iterable(
         _loop_parameter_appl_ast,
         %{args: %{sequence_id: sequence_id}, body: param_appls}) do

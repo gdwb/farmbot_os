@@ -27,7 +27,6 @@ defmodule FarmbotCeleryScript do
     if kind in @entrypoints do
       StepRunner.begin(caller, tag, ast)
     else
-      IO.puts("\e[H\e[2J\e[3J")
       msg = @error_message <> inspect(kind)
       FarmbotCore.Logger.error(3, msg)
       raise msg

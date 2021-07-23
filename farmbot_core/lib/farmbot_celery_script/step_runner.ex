@@ -13,27 +13,32 @@ defmodule FarmbotCeleryScript.StepRunner do
 
   def do_step(listener, tag, [fun | rest]) when is_function(fun, 0) do
     case execute(listener, tag, fun) do
-      [fun | _] = more when is_function(fun, 0) ->
+      # The step returned a list of compiled function.
+      # We need to execute them next.
+      # Use case: `_if` blocks, `execute` calls, etc..
+      [_next_ast_or_fun | _] = more ->
         do_step(listener, tag, more ++ rest)
 
-      {:error, reason} when is_binary(reason) ->
-        send(listener, {:csvm_done, tag, {:error, reason}})
-        {:error, reason}
-
-      # Catch non string errors
+      # The step failed for a specific reason.
       {:error, reason} ->
-        send(listener, {:csvm_done, tag, {:error, inspect(reason)}})
-        {:error, inspect(reason)}
-
+        message = if is_binary(reason) do reason else inspect(reason) end
+        err = {:error, message}
+        send(listener, {:csvm_done, tag, err})
+        err
       _ ->
         do_step(listener, tag, rest)
     end
   end
 
-  # def do_step(listener, tag, []) do
-  #   send(listener, {:csvm_done, tag, :ok})
-  #   :ok
-  # end
+  def do_step(listener, tag, [{_, _, _} = elixir_ast | rest]) do
+    {more, _env} = Macro.to_string(elixir_ast) |> Code.eval_string()
+    do_step(listener, tag, [more] ++ rest)
+  end
+
+  def do_step(listener, tag, []) do
+    send(listener, {:csvm_done, tag, :ok})
+    :ok
+  end
 
   defp execute(listener, tag, fun) do
     try do

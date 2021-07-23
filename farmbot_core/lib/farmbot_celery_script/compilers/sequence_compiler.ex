@@ -97,8 +97,7 @@ defmodule FarmbotCeleryScript.Compiler.Sequence do
     end
   end
 
-  def create_better_params(body) do
-    IO.inspect(body, label: "=== TODO: create_better_params")
+  def create_better_params(_ast_body) do
     %{unfinished: "YES"}
   end
 
@@ -111,9 +110,7 @@ defmodule FarmbotCeleryScript.Compiler.Sequence do
 
     [
       quote location: :keep do
-        fn params ->
-          # This quiets a compiler warning if there are no variables in this block
-          _ = inspect(params)
+        fn ->
           better_params = unquote(better_params)
           _ = inspect(better_params)
           # Unquote the remaining sequence steps.

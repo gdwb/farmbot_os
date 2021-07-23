@@ -6,11 +6,10 @@ defmodule FarmbotCeleryScript.Compiler.RPCRequest do
 
     [
       quote location: :keep do
-        fn params ->
+        fn ->
           better_params = %{no_variables_declared: %{}}
           # Quiets the compiler (unused var warning)
           _ = inspect(better_params)
-          _ = inspect(params)
           unquote(steps)
         end
       end

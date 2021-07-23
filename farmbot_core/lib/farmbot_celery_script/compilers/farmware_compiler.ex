@@ -15,7 +15,7 @@ defmodule FarmbotCeleryScript.Compiler.Farmware do
       package = unquote(Compiler.compile_ast_to_fun(package))
       env = unquote(Macro.escape(Map.new(env)))
       FarmbotCeleryScript.SysCalls.log(unquote(format_log(package)), true)
-      FarmbotCeleryScript.SysCalls.execute_script(package)
+      FarmbotCeleryScript.SysCalls.execute_script(package, env)
     end
   end
 

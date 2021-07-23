@@ -146,8 +146,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
     assert elixir_code =~
              strip_nl("""
              [
-               fn params ->
-                 _ = inspect(params)
+               fn ->
                  unsafe_U3lzdGVtLmNtZCgiZWNobyIsIFsibG9sIl0p = FarmbotCeleryScript.SysCalls.coordinate(1, 1, 1)
 
                  better_params = %{
@@ -452,8 +451,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
     assert compiled ==
              strip_nl("""
              [
-               fn params ->
-                 _ = inspect(params)
+               fn ->
                  better_params = %{}
                  _ = inspect(better_params)
 

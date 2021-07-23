@@ -11,13 +11,10 @@ defmodule FarmbotCeleryScript.Compiler.Utils do
   def compile_block(asts, acc \\ [])
 
   def compile_block(%AST{} = ast,  _) do
-    case Compiler.compile_ast_to_fun(ast) do
-      {_,  _} = compiled ->
-        {:__block__,  [compiled]}
-
-      compiled when is_list(compiled) ->
-        {:__block__,  compiled}
-    end
+    compiled = ast
+    |> Compiler.compile_ast_to_fun()
+    |> List.wrap()
+    {:__block__, compiled}
   end
 
   def compile_block([ast | rest],  acc) do
