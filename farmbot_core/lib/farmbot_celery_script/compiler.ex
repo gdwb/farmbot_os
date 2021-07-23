@@ -51,14 +51,17 @@ defmodule FarmbotCeleryScript.Compiler do
     fn -> {:error, "aborted"} end
   end
 
+  # Every @valid_entry_point has its own compiler, but there is some
+  # common logic involved in the compilation of both, therefore,
+  # we need a common entrypoint for both.
   def compile(%AST{kind: kind} = ast) when kind in @valid_entry_points do
     IO.puts("\e[H\e[2J\e[3J")
     IO.puts("========================")
-    ast
+    result = ast
     |> IO.inspect(label: "===== AST PRE COMPILATION")
     |> compile_ast_to_fun()
-    |> print_compiled_code()
-    raise "Re-write this part!"
+    print_compiled_code(result)
+    result
   end
 
   defdelegate assertion(ast), to: Compiler.Assertion

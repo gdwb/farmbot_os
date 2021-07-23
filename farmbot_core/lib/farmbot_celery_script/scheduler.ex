@@ -166,7 +166,7 @@ defmodule FarmbotCeleryScript.Scheduler do
   end
 
   def handle_info(
-        {:step_complete, {scheduled_at, executed_at, pid}, result},
+        {:csvm_done, {scheduled_at, executed_at, pid}, result},
         state
       ) do
     send(

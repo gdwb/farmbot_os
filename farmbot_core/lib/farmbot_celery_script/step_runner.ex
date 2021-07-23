@@ -17,12 +17,12 @@ defmodule FarmbotCeleryScript.StepRunner do
         do_step(listener, tag, more ++ rest)
 
       {:error, reason} when is_binary(reason) ->
-        send(listener, {:step_complete, tag, {:error, reason}})
+        send(listener, {:csvm_done, tag, {:error, reason}})
         {:error, reason}
 
       # Catch non string errors
       {:error, reason} ->
-        send(listener, {:step_complete, tag, {:error, inspect(reason)}})
+        send(listener, {:csvm_done, tag, {:error, inspect(reason)}})
         {:error, inspect(reason)}
 
       _ ->
@@ -30,10 +30,10 @@ defmodule FarmbotCeleryScript.StepRunner do
     end
   end
 
-  def do_step(listener, tag, []) do
-    send(listener, {:step_complete, tag, :ok})
-    :ok
-  end
+  # def do_step(listener, tag, []) do
+  #   send(listener, {:csvm_done, tag, :ok})
+  #   :ok
+  # end
 
   defp execute(listener, tag, fun) do
     try do
@@ -42,17 +42,17 @@ defmodule FarmbotCeleryScript.StepRunner do
       e ->
         IO.warn("CeleryScript Exception: ", __STACKTRACE__)
         result = {:error, Exception.message(e)}
-        send(listener, {:step_complete, tag, result})
+        send(listener, {:csvm_done, tag, result})
         result
     catch
       _kind, error when is_binary(error) ->
         IO.warn("CeleryScript Error: #{error}", __STACKTRACE__)
-        send(listener, {:step_complete, tag, {:error, error}})
+        send(listener, {:csvm_done, tag, {:error, error}})
         {:error, error}
 
       _kind, error ->
         IO.warn("CeleryScript Error: #{inspect(error)}", __STACKTRACE__)
-        send(listener, {:step_complete, tag, {:error, inspect(error)}})
+        send(listener, {:csvm_done, tag, {:error, inspect(error)}})
         {:error, inspect(error)}
     end
   end
