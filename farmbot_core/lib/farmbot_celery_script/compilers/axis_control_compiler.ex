@@ -2,15 +2,14 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
   alias FarmbotCeleryScript.Compiler
 
   # Compiles move_absolute
-  def move_absolute(
-        %{args: %{location: location, offset: offset, speed: speed}}) do
+  def move_absolute(%{args: %{location: location,offset: offset,speed: speed}}, cs_scope) do
     quote location: :keep do
       # Extract the location arg
       with %{x: locx, y: locy, z: locz} =
-             unquote(Compiler.compile_ast_to_fun(location)),
+             unquote(Compiler.celery_to_elixir(location, cs_scope)),
            # Extract the offset arg
            %{x: offx, y: offy, z: offz} =
-             unquote(Compiler.compile_ast_to_fun(offset)) do
+             unquote(Compiler.celery_to_elixir(offset, cs_scope)) do
         # Subtract the location from offset.
         # Note: list syntax here for readability.
         [x, y, z] = [
@@ -32,18 +31,18 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
           x,
           y,
           z,
-          unquote(Compiler.compile_ast_to_fun(speed))
+          unquote(Compiler.celery_to_elixir(speed, cs_scope))
         )
       end
     end
   end
 
   # compiles move_relative into move absolute
-  def move_relative(%{args: %{x: x, y: y, z: z, speed: speed}}) do
+  def move_relative(%{args: %{x: x, y: y, z: z, speed: speed}}, cs_scope) do
     quote location: :keep do
-      with locx when is_number(locx) <- unquote(Compiler.compile_ast_to_fun(x)),
-           locy when is_number(locy) <- unquote(Compiler.compile_ast_to_fun(y)),
-           locz when is_number(locz) <- unquote(Compiler.compile_ast_to_fun(z)),
+      with locx when is_number(locx) <- unquote(Compiler.celery_to_elixir(x, cs_scope)),
+           locy when is_number(locy) <- unquote(Compiler.celery_to_elixir(y, cs_scope)),
+           locz when is_number(locz) <- unquote(Compiler.celery_to_elixir(z, cs_scope)),
            curx when is_number(curx) <-
              FarmbotCeleryScript.SysCalls.get_current_x(),
            cury when is_number(cury) <-
@@ -67,14 +66,14 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
           x,
           y,
           z,
-          unquote(Compiler.compile_ast_to_fun(speed))
+          unquote(Compiler.celery_to_elixir(speed, cs_scope))
         )
       end
     end
   end
 
   # Expands find_home(all) into three find_home/1 calls
-  def find_home(%{args: %{axis: "all"}}) do
+  def find_home(%{args: %{axis: "all"}}, _cs_scope) do
     quote location: :keep do
       FarmbotCeleryScript.SysCalls.log("Finding home on all axes", true)
 
@@ -86,10 +85,10 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
   end
 
   # compiles find_home
-  def find_home(%{args: %{axis: axis}}) do
+  def find_home(%{args: %{axis: axis}}, cs_scope) do
     quote location: :keep do
       with axis when axis in ["x", "y", "z"] <-
-             unquote(Compiler.compile_ast_to_fun(axis)) do
+             unquote(Compiler.celery_to_elixir(axis, cs_scope)) do
         FarmbotCeleryScript.SysCalls.log(
           "Finding home on the #{String.upcase(axis)} axis",
           true
@@ -104,12 +103,12 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
   end
 
   # Expands home(all) into three home/1 calls
-  def home(%{args: %{axis: "all", speed: speed}}) do
+  def home(%{args: %{axis: "all", speed: speed}}, cs_scope) do
     quote location: :keep do
       FarmbotCeleryScript.SysCalls.log("Going to home on all axes", true)
 
       with speed when is_number(speed) <-
-             unquote(Compiler.compile_ast_to_fun(speed)),
+             unquote(Compiler.celery_to_elixir(speed, cs_scope)),
            :ok <- FarmbotCeleryScript.SysCalls.home("z", speed),
            :ok <- FarmbotCeleryScript.SysCalls.home("y", speed) do
         FarmbotCeleryScript.SysCalls.home("x", speed)
@@ -118,12 +117,12 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
   end
 
   # compiles home
-  def home(%{args: %{axis: axis, speed: speed}}) do
+  def home(%{args: %{axis: axis, speed: speed}}, cs_scope) do
     quote location: :keep do
       with axis when axis in ["x", "y", "z"] <-
-             unquote(Compiler.compile_ast_to_fun(axis)),
+             unquote(Compiler.celery_to_elixir(axis, cs_scope)),
            speed when is_number(speed) <-
-             unquote(Compiler.compile_ast_to_fun(speed)) do
+             unquote(Compiler.celery_to_elixir(speed, cs_scope)) do
         FarmbotCeleryScript.SysCalls.log(
           "Going to home on the #{String.upcase(axis)} axis",
           true
@@ -138,7 +137,7 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
   end
 
   # Expands zero(all) into three zero/1 calls
-  def zero(%{args: %{axis: "all"}}) do
+  def zero(%{args: %{axis: "all"}}, _cs_scope) do
     quote location: :keep do
       FarmbotCeleryScript.SysCalls.log("Setting home for all axes", true)
 
@@ -150,10 +149,10 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
   end
 
   # compiles zero
-  def zero(%{args: %{axis: axis}}) do
+  def zero(%{args: %{axis: axis}}, cs_scope) do
     quote location: :keep do
       with axis when axis in ["x", "y", "z"] <-
-             unquote(Compiler.compile_ast_to_fun(axis)) do
+             unquote(Compiler.celery_to_elixir(axis, cs_scope)) do
         FarmbotCeleryScript.SysCalls.log(
           "Setting home for the #{String.upcase(axis)} axis",
           true
@@ -168,7 +167,7 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
   end
 
   # Expands calibrate(all) into three calibrate/1 calls
-  def calibrate(%{args: %{axis: "all"}}) do
+  def calibrate(%{args: %{axis: "all"}}, _cs_scope) do
     quote location: :keep do
       FarmbotCeleryScript.SysCalls.log("Finding length of all axes", true)
 
@@ -182,10 +181,10 @@ defmodule FarmbotCeleryScript.Compiler.AxisControl do
   end
 
   # compiles calibrate
-  def calibrate(%{args: %{axis: axis}}) do
+  def calibrate(%{args: %{axis: axis}}, cs_scope) do
     quote location: :keep do
       with axis when axis in ["x", "y", "z"] <-
-             unquote(Compiler.compile_ast_to_fun(axis)) do
+             unquote(Compiler.celery_to_elixir(axis, cs_scope)) do
         msg = "Determining length of the #{String.upcase(axis)} axis"
         FarmbotCeleryScript.SysCalls.log(msg, true)
         FarmbotCeleryScript.SysCalls.calibrate(axis)

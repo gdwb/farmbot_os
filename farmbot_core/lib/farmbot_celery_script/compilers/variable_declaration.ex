@@ -2,7 +2,8 @@ defmodule FarmbotCeleryScript.Compiler.VariableDeclaration do
   alias FarmbotCeleryScript.{Compiler, Compiler.IdentifierSanitizer}
 
   @doc "Compiles a variable asignment"
-  def variable_declaration(%{args: %{label: var_name, data_value: data_value_ast}}) do
+  def variable_declaration(%{args: %{label: var_name, data_value: data_value_ast}}, cs_scope) do
+    IO.puts("====== TODO: Change this!!!")
     # Compiles the `data_value`
     # and assigns the result to a variable named `label`
     # Example:
@@ -27,7 +28,7 @@ defmodule FarmbotCeleryScript.Compiler.VariableDeclaration do
 
     quote location: :keep do
       unquote({var_name, [], nil}) =
-        unquote(Compiler.compile_ast_to_fun(data_value_ast))
+        unquote(Compiler.celery_to_elixir(data_value_ast, cs_scope))
 
       _ = inspect(unquote({var_name, [], nil}))
     end

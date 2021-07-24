@@ -76,13 +76,13 @@ defmodule FarmbotCeleryScript.CompilerTest do
       ]
     }
 
-    [body_item] = Compiler.compile(sequence)
+    [body_item] = Compiler.compile(sequence, %{})
     assert body_item.() == 100
 
-    [body_item] = Compiler.compile(sequence)
+    [body_item] = Compiler.compile(sequence, %{})
     assert body_item.() == 900
 
-    [body_item] = Compiler.compile(sequence)
+    [body_item] = Compiler.compile(sequence, %{})
     assert body_item.() == 600
   end
 
@@ -102,7 +102,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
       kind: :sequence
     }
 
-    body = Compiler.compile(sequence)
+    body = Compiler.compile(sequence, %{})
     assert body == []
   end
 
@@ -133,7 +133,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
       ]
     }
 
-    elixir_ast = Compiler.compile_ast_to_fun(celery_ast)
+    elixir_ast = Compiler.celery_to_elixir(celery_ast)
 
     elixir_code =
       elixir_ast
@@ -406,7 +406,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
 
   test "`abort`" do
     ast = %AST{kind: :abort}
-    func = Compiler.compile(ast)
+    func = Compiler.compile(ast, %{})
     assert func.() == {:error, "aborted"}
   end
 
@@ -434,7 +434,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
       meta: nil
     }
 
-    result = Compiler.compile(example)
+    result = Compiler.compile(example, %{})
     # Previously, this would crash because
     # `better_params` was not declared.
     assert result
@@ -494,7 +494,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
 
   defp compile(ast) do
     ast
-    |> Compiler.compile_ast_to_fun()
+    |> Compiler.celery_to_elixir()
     |> Macro.to_string()
     |> Code.format_string!()
     |> IO.iodata_to_binary()

@@ -4,23 +4,22 @@ defmodule FarmbotCeleryScript.Compiler.Execute do
 
   # Compiles an `execute` block.
   # This one is actually pretty complex and is split into two parts.
-  def execute(%{body: parameter_applications} = ast) do
+  def execute(%{body: parameter_applications} = ast, cs_scope) do
     # if there is an iterable AST here,
     # we need to compile _many_ sequences, not just one.
 
+    IO.puts("TODO: You need to modify `cs_scope` here!!")
     loop_parameter_appl_ast = FarmbotCeleryScript
       .Compiler
       .ParameterSupport
       .extract_iterable(parameter_applications)
 
     if loop_parameter_appl_ast,
-      do: compile_execute_iterable(loop_parameter_appl_ast, ast),
-      else: compile_execute(ast)
+      do: compile_execute_iterable(ast, cs_scope),
+      else: compile_execute(ast, cs_scope)
   end
 
-  def compile_execute_iterable(
-        _loop_parameter_appl_ast,
-        %{args: %{sequence_id: sequence_id}, body: param_appls}) do
+  def compile_execute_iterable(%{args: %{sequence_id: sequence_id}, body: param_appls}, _cs_scope) do
     quote location: :keep do
       case FarmbotCeleryScript.SysCalls.get_sequence(unquote(sequence_id)) do
         %FarmbotCeleryScript.AST{kind: :sequence} = celery_ast ->
@@ -36,7 +35,7 @@ defmodule FarmbotCeleryScript.Compiler.Execute do
             })
 
           celery_ast = %{celery_ast | args: celery_args}
-          Compiler.compile(celery_ast)
+          Compiler.compile(celery_ast, cs_scope)
 
         error ->
           error
@@ -44,12 +43,12 @@ defmodule FarmbotCeleryScript.Compiler.Execute do
     end
   end
 
-  def compile_execute(%{args: %{sequence_id: id}}) do
+  def compile_execute(%{args: %{sequence_id: id}}, cs_scope) do
     quote location: :keep do
       # We have to lookup the sequence by it's id.
       case FarmbotCeleryScript.SysCalls.get_sequence(unquote(id)) do
         %FarmbotCeleryScript.AST{} = ast ->
-          FarmbotCeleryScript.Compiler.compile(ast)
+          FarmbotCeleryScript.Compiler.compile(ast, unquote(cs_scope))
         error ->
           error
       end

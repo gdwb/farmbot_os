@@ -30,6 +30,6 @@ defmodule FarmbotCeleryScript.IntegrationTest do
       |> Jason.decode!()
       |> AST.decode()
 
-    Compiler.compile(ast)
+    Compiler.compile(ast, %{})
   end
 end

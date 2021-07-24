@@ -1,7 +1,7 @@
 defmodule FarmbotCeleryScript.Compiler.RPCRequest do
   alias FarmbotCeleryScript.Compiler.Utils
-  def rpc_request(%{args: %{label: _label}, body: block}) do
-    steps = Utils.compile_block(block)
+  def rpc_request(%{args: %{label: _label}, body: block}, cs_scope) do
+    steps = Utils.compile_block(block, cs_scope)
     |> Utils.decompose_block_to_steps()
 
     [

@@ -1,7 +1,7 @@
 defmodule FarmbotCeleryScript.Compiler.Sequence do
   alias FarmbotCeleryScript.Compiler.Utils
 
-  def sequence(%{args: %{locals: %{body: params_or_iterables}}} = ast) do
+  def sequence(%{args: %{locals: %{body: params_or_iterables}}} = ast, cs_scope) do
     # if there is an iterable AST here,
     # we need to compile _many_ sequences, not just one.
 
@@ -11,18 +11,19 @@ defmodule FarmbotCeleryScript.Compiler.Sequence do
     .extract_iterable(params_or_iterables)
 
     if iterable_ast do
-      compile_sequence_iterable(iterable_ast, ast)
+      compile_sequence_iterable(ast, iterable_ast, cs_scope)
     else
-      compile_sequence(ast)
+      compile_sequence(ast, cs_scope)
     end
   end
 
   def compile_sequence_iterable(
-        iterable_ast,
         %{
           args: %{locals: %{body: _} = locals} = sequence_args,
           meta: sequence_meta
-        } = sequence_ast) do
+        } = sequence_ast,
+        iterable_ast,
+        cs_scope) do
     sequence_name =
       sequence_meta[:sequence_name] || sequence_args[:sequence_name]
 
@@ -85,7 +86,7 @@ defmodule FarmbotCeleryScript.Compiler.Sequence do
                   sequence_ast
                   | meta: %{sequence_name: sequence_name},
                     args: %{locals: %{locals | body: [parameter_application]}}
-                })
+                }, cs_scope)
 
             {acc ++ body, index + 1}
           end)
@@ -97,13 +98,30 @@ defmodule FarmbotCeleryScript.Compiler.Sequence do
     end
   end
 
-  def create_better_params(_ast_body) do
-    %{unfinished: "YES"}
+  def create_better_params(body) do
+    Enum.reduce(body, %{}, fn ast, map ->
+      case ast do
+        %{kind: :parameter_application} ->
+          args = Map.fetch!(ast, :args)
+          label = Map.fetch!(args, :label)
+          Map.put(map, label, Map.fetch!(args, :data_value))
+
+        %{kind: :variable_declaration} ->
+          args = Map.fetch!(ast, :args)
+          label = Map.fetch!(args, :label)
+          Map.put(map, label, Map.fetch!(args, :data_value))
+
+        %{kind: :parameter_declaration} ->
+          map
+      end
+    end)
   end
 
-  def compile_sequence(%{args: %{locals: %{body: params}} = args, body: block, meta: meta}) do
+  def compile_sequence(%{args: %{locals: %{body: params}} = args, body: block, meta: meta}, cs_scope) do
     sequence_name = meta[:sequence_name] || args[:sequence_name]
-    steps = Utils.compile_block(block) |> Utils.decompose_block_to_steps()
+    steps = block
+    |> Utils.compile_block(cs_scope)
+    |> Utils.decompose_block_to_steps()
     steps = Utils.add_sequence_init_and_complete_logs(steps, sequence_name)
 
     better_params = create_better_params(params)

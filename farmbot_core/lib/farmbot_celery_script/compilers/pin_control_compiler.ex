@@ -1,12 +1,11 @@
 defmodule FarmbotCeleryScript.Compiler.PinControl do
   alias FarmbotCeleryScript.Compiler
 
-  def write_pin(
-        %{args: %{pin_number: num, pin_mode: mode, pin_value: value}}) do
+  def write_pin(%{args: %{pin_number: num, pin_mode: mode, pin_value: value}}, _) do
     quote location: :keep do
-      pin = unquote(Compiler.compile_ast_to_fun(num))
-      mode = unquote(Compiler.compile_ast_to_fun(mode))
-      value = unquote(Compiler.compile_ast_to_fun(value))
+      pin = Compiler.celery_to_elixir(unquote(num), cs_scope)
+      mode = Compiler.celery_to_elixir(unquote(mode), cs_scope)
+      value = Compiler.celery_to_elixir(unquote(value), cs_scope)
 
       with :ok <- FarmbotCeleryScript.SysCalls.write_pin(pin, mode, value) do
         me = unquote(__MODULE__)
@@ -16,20 +15,20 @@ defmodule FarmbotCeleryScript.Compiler.PinControl do
   end
 
   # compiles read_pin
-  def read_pin(%{args: %{pin_number: num, pin_mode: mode}}) do
+  def read_pin(%{args: %{pin_number: num, pin_mode: mode}}, cs_scope) do
     quote location: :keep do
-      pin = unquote(Compiler.compile_ast_to_fun(num))
-      mode = unquote(Compiler.compile_ast_to_fun(mode))
+      pin = unquote(Compiler.celery_to_elixir(num, cs_scope))
+      mode = unquote(Compiler.celery_to_elixir(mode, cs_scope))
       FarmbotCeleryScript.SysCalls.read_pin(pin, mode)
     end
   end
 
   # compiles set_servo_angle
   def set_servo_angle(
-        %{args: %{pin_number: pin_number, pin_value: pin_value}}) do
+        %{args: %{pin_number: pin_number, pin_value: pin_value}}, cs_scope) do
     quote location: :keep do
-      pin = unquote(Compiler.compile_ast_to_fun(pin_number))
-      angle = unquote(Compiler.compile_ast_to_fun(pin_value))
+      pin = unquote(Compiler.celery_to_elixir(pin_number, cs_scope))
+      angle = unquote(Compiler.celery_to_elixir(pin_value, cs_scope))
       FarmbotCeleryScript.SysCalls.log("Writing servo: #{pin}: #{angle}")
       FarmbotCeleryScript.SysCalls.set_servo_angle(pin, angle)
     end
@@ -37,16 +36,16 @@ defmodule FarmbotCeleryScript.Compiler.PinControl do
 
   # compiles set_pin_io_mode
   def set_pin_io_mode(
-        %{args: %{pin_number: pin_number, pin_io_mode: mode}}) do
+        %{args: %{pin_number: pin_number, pin_io_mode: mode}}, cs_scope) do
     quote location: :keep do
-      pin = unquote(Compiler.compile_ast_to_fun(pin_number))
-      mode = unquote(Compiler.compile_ast_to_fun(mode))
+      pin = unquote(Compiler.celery_to_elixir(pin_number, cs_scope))
+      mode = unquote(Compiler.celery_to_elixir(mode, cs_scope))
       FarmbotCeleryScript.SysCalls.log("Setting pin mode: #{pin}: #{mode}")
       FarmbotCeleryScript.SysCalls.set_pin_io_mode(pin, mode)
     end
   end
 
-  def toggle_pin(%{args: %{pin_number: pin_number}}) do
+  def toggle_pin(%{args: %{pin_number: pin_number}}, _cs_scope) do
     quote location: :keep do
       FarmbotCeleryScript.SysCalls.toggle_pin(unquote(pin_number))
     end

@@ -8,7 +8,8 @@ defmodule FarmbotCeleryScript.StepRunner do
   Steps through an entire AST.
   """
   def begin(listener, tag, %AST{} = ast) do
-    do_step(listener, tag, Compiler.compile(ast))
+    IO.puts("PROBABLY NEED TO CHANGE cs_scope HERE")
+    do_step(listener, tag, Compiler.compile(ast, %{}))
   end
 
   def do_step(listener, tag, [fun | rest]) when is_function(fun, 0) do
