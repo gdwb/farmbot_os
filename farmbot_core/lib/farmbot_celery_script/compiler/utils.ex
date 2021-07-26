@@ -1,12 +1,29 @@
 defmodule FarmbotCeleryScript.Compiler.Utils do
+  alias FarmbotCeleryScript.{Compiler, AST}
   @doc """
   Recursively compiles a list or single Celery AST into an Elixir `__block__`
   """
-  def compile_block(_asts, _cs_scope) do
-    raise "I need to re-incorporate cs_scope. Probbly with recursion."
+  def compile_block(ast, cs_scope) do
+    compile_block(ast, cs_scope, [])
   end
 
-  def decompose_block_to_steps({:__block__, steps} = _orig) do
+  def compile_block(%AST{} = ast, cs_scope, _) do
+    case Compiler.compile(ast, cs_scope) do
+      {_, _, _} = compiled -> {:__block__, [], [compiled]}
+      compiled when is_list(compiled) -> {:__block__, [], compiled}
+    end
+  end
+
+  def compile_block([ast | rest], cs_scope, acc) do
+    case Compiler.compile(ast, cs_scope) do
+      {_, _, _} = compiled -> compile_block(rest, cs_scope, acc ++ [compiled])
+      compiled when is_list(compiled) -> compile_block(rest, cs_scope, acc ++ compiled)
+    end
+  end
+
+  def compile_block([], _cs_scope, acc), do: {:__block__, [], acc}
+
+  def decompose_block_to_steps({:__block__, _, steps} = _orig) do
     Enum.map(steps, fn step ->
       quote location: :keep do
         fn -> unquote(step) end
@@ -19,7 +36,7 @@ defmodule FarmbotCeleryScript.Compiler.Utils do
     # This looks really weird because of the logs before and
     # after the compiled steps
     List.flatten([
-      quote do
+      quote location: :keep do
         fn ->
           FarmbotCeleryScript.SysCalls.sequence_init_log(
             "Starting #{unquote(sequence_name)}"
@@ -27,7 +44,7 @@ defmodule FarmbotCeleryScript.Compiler.Utils do
         end
       end,
       steps,
-      quote do
+      quote  location: :keep do
         fn ->
           FarmbotCeleryScript.SysCalls.sequence_complete_log(
             "Completed #{unquote(sequence_name)}"
@@ -46,7 +63,7 @@ defmodule FarmbotCeleryScript.Compiler.Utils do
     # This looks really weird because of the logs before and
     # after the compiled steps
     List.flatten([
-      quote do
+      quote location: :keep do
         fn _ ->
           [
             fn ->
@@ -58,7 +75,7 @@ defmodule FarmbotCeleryScript.Compiler.Utils do
         end
       end,
       steps,
-      quote do
+      quote location: :keep do
         fn _ ->
           [
             fn ->

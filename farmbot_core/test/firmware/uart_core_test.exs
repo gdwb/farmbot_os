@@ -182,7 +182,7 @@ defmodule FarmbotCore.Firmware.UARTCoreTest do
 
   test "handle_info({:send_raw, E}, %State{} = state)" do
     expect(Support, :uart_send, 1, fn _uart_pid, msg ->
-      assert msg == "E\r\n"
+      assert msg == "E"
       :ok
     end)
 

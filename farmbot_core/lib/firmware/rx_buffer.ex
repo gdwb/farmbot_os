@@ -110,6 +110,7 @@ defmodule FarmbotCore.Firmware.RxBuffer do
       |> Enum.join(" ")
       |> String.replace(~r/\n /, @new_line)
       |> String.split(~r/\n/)
+      |> String.upcase()
       |> Enum.filter(fn
         # Valid GCode messages start with "R".
         # Throw away anything that doesn't.

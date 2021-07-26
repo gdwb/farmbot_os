@@ -3,13 +3,16 @@ defmodule FarmbotCeleryScript.StepRunner do
   Handles execution of compiled CeleryScript AST
   """
   alias FarmbotCeleryScript.{AST, Compiler}
+  alias FarmbotCeleryScript.Compiler.Scope
 
   @doc """
   Steps through an entire AST.
   """
   def begin(listener, tag, %AST{} = ast) do
-    IO.puts("PROBABLY NEED TO CHANGE cs_scope HERE")
-    do_step(listener, tag, Compiler.compile(ast, %{}))
+    IO.inspect(ast, label: "==== ENTRY POINT")
+    # Maybe I should wrap this in a function that declares
+    # the `better_params` object?
+    do_step(listener, tag, Compiler.compile(ast, Scope.new()))
   end
 
   def do_step(listener, tag, [fun | rest]) when is_function(fun, 0) do

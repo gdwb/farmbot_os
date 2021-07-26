@@ -13,7 +13,7 @@ defmodule FarmbotCeleryScript.Compiler do
     false
   end
 
-  @valid_entry_points [:sequence, :rpc_request]
+  # @valid_entry_points [:sequence, :rpc_request, :execute]
 
   @typedoc """
   Compiled CeleryScript node should compile to an anon function.
@@ -46,18 +46,17 @@ defmodule FarmbotCeleryScript.Compiler do
   @doc """
   Recursive function that will emit Elixir AST from CeleryScript AST.
   """
-  def compile(%AST{kind: :abort}) do
+  def compile(%AST{kind: :abort}, _cs_scope) do
     fn -> {:error, "aborted"} end
   end
 
   # Every @valid_entry_point has its own compiler, but there is some
   # common logic involved in the compilation of both, therefore,
   # we need a common entrypoint for both.
-  def compile(%AST{kind: kind} = ast, cs_scope) when kind in @valid_entry_points do
-    result = ast
+  def compile(%AST{} = ast, cs_scope) do
+    ast
     |> celery_to_elixir(cs_scope)
-    print_compiled_code(result)
-    result
+    |> print_compiled_code()
   end
 
   defdelegate assertion(ast, cs_scope), to: Compiler.Assertion
@@ -86,7 +85,7 @@ defmodule FarmbotCeleryScript.Compiler do
   defdelegate unquote(:_if)(ast, cs_scope), to: Compiler.If
   defdelegate update_farmware(ast, cs_scope), to: Compiler.Farmware
   defdelegate update_resource(ast, cs_scope), to: Compiler.UpdateResource
-  defdelegate variable_declaration(ast, cs_scope), to: Compiler.VariableDeclaration
+  # defdelegate variable_declaration(ast, cs_scope), to: Compiler.VariableDeclaration
   defdelegate write_pin(ast, cs_scope), to: Compiler.PinControl
   defdelegate zero(ast, cs_scope), to: Compiler.AxisControl
 
@@ -149,12 +148,9 @@ defmodule FarmbotCeleryScript.Compiler do
     end
   end
 
-  # compiles identifier into a variable.
-  # We have to use Elixir ast syntax here because
-  # var! doesn't work quite the way we want.
   def identifier(%{args: %{label: var_name}}, _cs_scope) do
     quote location: :keep do
-      Map.fetch!(cs_scope, unquote(var_name))
+      FarmbotCeleryScript.Compiler.Scope.fetch!(cs_scope, unquote(var_name))
     end
   end
 
@@ -245,14 +241,14 @@ defmodule FarmbotCeleryScript.Compiler do
     end
   end
 
+  # Uncomment these lines if you
+  # need to inspect CeleryScript issue
   defp print_compiled_code(compiled) do
     # IO.puts("# === START ===")
-
     # compiled
     # |> Macro.to_string()
     # |> Code.format_string!()
     # |> IO.puts()
-
     # IO.puts("# === END ===\n\n")
     compiled
   end
