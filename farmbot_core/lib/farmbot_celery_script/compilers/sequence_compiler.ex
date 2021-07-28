@@ -19,8 +19,8 @@ defmodule FarmbotCeleryScript.Compiler.Sequence do
       |> Utils.decompose_block_to_steps()
       quote location: :keep do
         fn ->
-          better_params = unquote(cs_scope)
-          _ = inspect(better_params)
+          cs_scope = unquote(cs_scope)
+          _ = inspect(cs_scope)
           # Unquote the remaining sequence steps.
           unquote(steps)
         end

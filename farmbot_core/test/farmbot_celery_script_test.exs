@@ -11,6 +11,8 @@ defmodule FarmbotCeleryScriptTest do
   setup :verify_on_exit!
 
   test "uses default values when no parameter is found" do
+    IO.puts("\e[H\e[2J\e[3J")
+
     sequence_ast =
       %{
         kind: :sequence,

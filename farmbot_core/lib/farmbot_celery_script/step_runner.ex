@@ -11,7 +11,7 @@ defmodule FarmbotCeleryScript.StepRunner do
   def begin(listener, tag, %AST{} = ast) do
     IO.inspect(ast, label: "==== ENTRY POINT")
     # Maybe I should wrap this in a function that declares
-    # the `better_params` object?
+    # the `cs_scope` object?
     do_step(listener, tag, Compiler.compile(ast, Scope.new()))
   end
 

@@ -145,28 +145,28 @@ defmodule FarmbotCeleryScript.CompilerTest do
     assert elixir_code =~
              strip_nl("""
                [
-                 fn ->
-                   better_params = %FarmbotCeleryScript.Compiler.Scope{
-                     declarations: %{
-                       "System.cmd(\"echo\", [\"lol\"])" => %FarmbotCeleryScript.AST{
-                         args: %{x: 1, y: 1, z: 1},
-                         body: [],
-                         comment: nil,
-                         kind: :coordinate,
-                         meta: nil
-                       }
-                     },
-                     parent: nil
-                   }
+                  fn ->
+                    cs_scope = %FarmbotCeleryScript.Compiler.Scope{
+                      declarations: %{
+                        "System.cmd(\"echo\", [\"lol\"])" => %FarmbotCeleryScript.AST{
+                          args: %{x: 1, y: 1, z: 1},
+                          body: [],
+                          comment: nil,
+                          kind: :coordinate,
+                          meta: nil
+                        }
+                      },
+                      parent: nil
+                    }
 
-                   _ = inspect(better_params)
+                    _ = inspect(cs_scope)
 
-                   [
-                     fn ->
-                       FarmbotCeleryScript.Compiler.Scope.fetch!(cs_scope, "System.cmd(\"echo\", [\"lol\"])")
-                     end
-                   ]
-                 end
+                    [
+                      fn ->
+                        FarmbotCeleryScript.Compiler.Scope.fetch!(cs_scope, "System.cmd(\"echo\", [\"lol\"])")
+                      end
+                    ]
+                  end
              ]
              """)
 
@@ -387,7 +387,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
 
     x =
       strip_nl(
-        "[\n  fn params ->\n    _ = inspect(params)\n\n    (\n      unsafe_cGFyZW50 =\n        Keyword.get(params, :unsafe_cGFyZW50, FarmbotCeleryScript.SysCalls.coordinate(1, 2, 3))\n\n      _ = unsafe_cGFyZW50\n    )\n\n    better_params = %{}\n    _ = inspect(better_params)\n\n    [\n      fn ->\n        me = FarmbotCeleryScript.Compiler.UpdateResource\n\n        variable = %FarmbotCeleryScript.AST{\n          args: %{label: \"parent\"},\n          body: [],\n          comment: nil,\n          kind: :identifier,\n          meta: nil\n        }\n\n        update = %{\"plant_stage\" => \"removed\"}\n\n        case(variable) do\n          %AST{kind: :identifier} ->\n            args = Map.fetch!(variable, :args)\n            label = Map.fetch!(args, :label)\n            resource = Map.fetch!(better_params, label)\n            me.do_update(resource, update)\n\n          %AST{kind: :point} ->\n            me.do_update(variable.args(), update)\n\n          %AST{kind: :resource} ->\n            me.do_update(variable.args(), update)\n\n          res ->\n            raise(\"Resource error. Please notfiy support: \#{inspect(res)}\")\n        end\n      end\n    ]\n  end\n]"
+        "[\n  fn params ->\n    _ = inspect(params)\n\n    (\n      unsafe_cGFyZW50 =\n        Keyword.get(params, :unsafe_cGFyZW50, FarmbotCeleryScript.SysCalls.coordinate(1, 2, 3))\n\n      _ = unsafe_cGFyZW50\n    )\n\n    cs_scope = %{}\n    _ = inspect(cs_scope)\n\n    [\n      fn ->\n        me = FarmbotCeleryScript.Compiler.UpdateResource\n\n        variable = %FarmbotCeleryScript.AST{\n          args: %{label: \"parent\"},\n          body: [],\n          comment: nil,\n          kind: :identifier,\n          meta: nil\n        }\n\n        update = %{\"plant_stage\" => \"removed\"}\n\n        case(variable) do\n          %AST{kind: :identifier} ->\n            args = Map.fetch!(variable, :args)\n            label = Map.fetch!(args, :label)\n            resource = Map.fetch!(cs_scope, label)\n            me.do_update(resource, update)\n\n          %AST{kind: :point} ->\n            me.do_update(variable.args(), update)\n\n          %AST{kind: :resource} ->\n            me.do_update(variable.args(), update)\n\n          res ->\n            raise(\"Resource error. Please notfiy support: \#{inspect(res)}\")\n        end\n      end\n    ]\n  end\n]"
       )
 
     assert compiled == x
@@ -425,7 +425,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
 
     result = Compiler.compile(example, Scope.new())
     # Previously, this would crash because
-    # `better_params` was not declared.
+    # `cs_scope` was not declared.
     assert result
   end
 
@@ -441,8 +441,8 @@ defmodule FarmbotCeleryScript.CompilerTest do
              strip_nl("""
              [
                fn ->
-                 better_params = %{}
-                 _ = inspect(better_params)
+                 cs_scope = %{}
+                 _ = inspect(cs_scope)
 
                  [
                    fn ->
@@ -462,7 +462,7 @@ defmodule FarmbotCeleryScript.CompilerTest do
                        %AST{kind: :identifier} ->
                          args = Map.fetch!(variable, :args)
                          label = Map.fetch!(args, :label)
-                         resource = Map.fetch!(better_params, label)
+                         resource = Map.fetch!(cs_scope, label)
                          me.do_update(resource, update)
 
                        %AST{kind: :point} ->
@@ -487,9 +487,12 @@ defmodule FarmbotCeleryScript.CompilerTest do
     |> Macro.to_string()
     |> Code.format_string!()
     |> IO.iodata_to_binary()
+    |> strip_nl()
   end
 
   defp strip_nl(text) do
-    String.trim_trailing(text, "\n")
+    text
+    |> String.trim_trailing("\n")
+    |> String.replace(~r/\s+/, " ")
   end
 end

@@ -24,7 +24,7 @@ defmodule FarmbotCeleryScript.IntegrationTest do
   ]
 
   test "all the fixtures (should not crash!)" do
-    expect(FarmbotCeleryScript.SysCalls, :get_sequence, 7, fn id ->
+    expect(FarmbotCeleryScript.SysCalls, :get_sequence, 7, fn _id ->
       compile_celery_file("fixture/inner_sequence.json")
     end)
 
@@ -33,6 +33,7 @@ defmodule FarmbotCeleryScript.IntegrationTest do
 
   def compile_celery_file(json_path) do
     IO.puts("==== BEGIN " <> json_path)
+
     json_path
     |> File.read!()
     |> Jason.decode!()

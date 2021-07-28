@@ -12,8 +12,8 @@ defmodule FarmbotCeleryScript.Compiler.Execute do
         quote location: :keep do
           # execute_compiler.ex
           sequence = unquote(sequence_ast)
-          better_params = unquote(Scope.new(previous_scope, execute_ast.body))
-          FarmbotCeleryScript.Compiler.Sequence.sequence(sequence, better_params)
+          cs_scope = unquote(Scope.new(previous_scope, execute_ast.body))
+          FarmbotCeleryScript.Compiler.Sequence.sequence(sequence, cs_scope)
         end
       error ->
         error

@@ -22,7 +22,7 @@ defmodule FarmbotCeleryScript.Compiler.Assertion do
       assertion_type = unquote(assertion_type)
       # cmnt = unquote(comment)
       lua_code = unquote(Compiler.celery_to_elixir(expression, cs_scope))
-      result = FarmbotCeleryScript.Compiler.Lua.do_lua(lua_code, better_params)
+      result = FarmbotCeleryScript.Compiler.Lua.do_lua(lua_code, cs_scope)
       # result = FarmbotCeleryScript.SysCalls.perform_lua(lua_code, [], cmnt)
       case result do
         {:error, reason} ->
