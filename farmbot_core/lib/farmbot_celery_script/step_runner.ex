@@ -48,7 +48,8 @@ defmodule FarmbotCeleryScript.StepRunner do
   end
 
   defp not_ok(listener, tag, original_error, trace \\ nil) do
-    Logger.warn("CeleryScript Exception: #{inspect(original_error)} / #{inspect(trace)}")
+    t = inspect(trace || "No stack trace")
+    Logger.warn("CeleryScript Exception: #{inspect(original_error)} / #{t}")
     error = format_error(original_error)
     send(listener, {:csvm_done, tag, error})
     error

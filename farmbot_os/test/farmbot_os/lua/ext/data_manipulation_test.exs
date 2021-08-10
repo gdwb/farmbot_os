@@ -242,7 +242,7 @@ defmodule FarmbotOS.Lua.Ext.DataManipulationTest do
     expect(FarmbotExt.HTTP, :hackney, 1, fn -> FakeHackney end)
 
     params =
-      FarmbotOS.Lua.Util.map_to_table(%{
+      FarmbotOS.Lua.Util.elixir_to_lua(%{
         "url" => "http://localhost:4567",
         "method" => "POST",
         "headers" => %{"foo" => "bar"},

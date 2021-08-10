@@ -47,7 +47,7 @@ defmodule FarmbotOS.Lua.Ext.DataManipulation do
     {:ok, resp_body} = hackney.body(client_ref)
     result = %{body: resp_body, headers: Map.new(resp_headers), status: status}
 
-    {[Util.map_to_table(result)], lua}
+    {[Util.elixir_to_lua(result)], lua}
   end
 
   def env([key, value], lua) do
@@ -82,7 +82,7 @@ defmodule FarmbotOS.Lua.Ext.DataManipulation do
 
   def json_decode([data], lua) do
     with {:ok, map} <- JSON.decode(data) do
-      {[Util.map_to_table(map)], lua}
+      {[Util.elixir_to_lua(map)], lua}
     else
       _ -> {[nil, "Error parsing JSON."], lua}
     end
@@ -109,7 +109,7 @@ defmodule FarmbotOS.Lua.Ext.DataManipulation do
 
   def get_device(_, lua) do
     device = Asset.device() |> Device.render()
-    {[Util.map_to_table(device)], lua}
+    {[Util.elixir_to_lua(device)], lua}
   end
 
   def update_fbos_config([table], lua) do
@@ -129,7 +129,7 @@ defmodule FarmbotOS.Lua.Ext.DataManipulation do
     conf =
       Asset.fbos_config()
       |> FbosConfig.render()
-      |> Util.map_to_table()
+      |> Util.elixir_to_lua()
 
     {[conf], lua}
   end
@@ -149,7 +149,7 @@ defmodule FarmbotOS.Lua.Ext.DataManipulation do
 
   def get_firmware_config(_, lua) do
     firmware_config = Asset.firmware_config() |> FirmwareConfig.render()
-    {[Util.map_to_table(firmware_config)], lua}
+    {[Util.elixir_to_lua(firmware_config)], lua}
   end
 
   def new_sensor_reading([table], lua) do

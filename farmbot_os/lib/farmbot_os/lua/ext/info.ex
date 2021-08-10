@@ -39,7 +39,7 @@ defmodule FarmbotOS.Lua.Ext.Info do
   def read_status([], lua) do
     bot_state = FarmbotCore.BotState.fetch() |> FarmbotCore.BotStateNG.view()
 
-    {[Util.map_to_table(bot_state)], lua}
+    {[Util.elixir_to_lua(bot_state)], lua}
   end
 
   def read_status(path, lua) do
@@ -48,7 +48,7 @@ defmodule FarmbotOS.Lua.Ext.Info do
 
     case get_in(bot_state, path) do
       %{} = map ->
-        {[Util.map_to_table(map)], lua}
+        {[Util.elixir_to_lua(map)], lua}
 
       other ->
         {[other], lua}

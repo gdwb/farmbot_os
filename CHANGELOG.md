@@ -5,6 +5,7 @@
  * Genesis and Express firmware updates.
  * Ability to use more than one variable per sequence.
  * Ability for Lua developers to see current point group via `__GROUP__` sequence variable.
+ * Lua bugfix: Ability to deserialize JSON arrays.
 
 # 14.2.2
 
