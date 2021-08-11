@@ -23,17 +23,11 @@ defmodule FarmbotOS.System do
     Logger.info("Stopping app: :farmbot")
     _ = Application.stop(:farmbot)
 
-    Logger.info("Stopping app: :farmbot_ext")
-    _ = Application.stop(:farmbot_ext)
-
     Logger.info("Stopping app: :farmbot_core")
     _ = Application.stop(:farmbot_core)
 
     Logger.info("Starting ap: :farmbot_core")
     _ = Application.ensure_all_started(:farmbot_core)
-
-    Logger.info("Starting ap: :farmbot_ext")
-    _ = Application.ensure_all_started(:farmbot_ext)
 
     Logger.info("Starting ap: :farmbot")
     _ = Application.ensure_all_started(:farmbot)
