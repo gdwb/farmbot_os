@@ -23,14 +23,6 @@ MIX_ENV=test mix compile --force
 mix coveralls.html
 rm -f *.coverdata
 
-echo "######### farmbot_ext"
-cd ../farmbot_ext
-mix format
-mix deps.get --all
-MIX_ENV=test mix compile --force
-mix coveralls.html
-rm -f *.coverdata
-
 echo "######### farmbot_os"
 cd ../farmbot_os
 mix format

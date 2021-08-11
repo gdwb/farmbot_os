@@ -39,8 +39,7 @@ config :shoehorn,
     :nerves_runtime,
     :vintage_net,
     :nerves_firmware_ssh,
-    :farmbot_core,
-    :farmbot_ext
+    :farmbot_core
   ],
   handler: FarmbotOS.Platform.Target.ShoehornHandler,
   app: :farmbot
