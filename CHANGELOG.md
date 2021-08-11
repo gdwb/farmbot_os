@@ -1,5 +1,9 @@
 # Changelog
 
+# 14.4.0
+
+ * Remove `farmbot_ext`.
+
 # 14.3.0
 
  * Genesis and Express firmware updates.
